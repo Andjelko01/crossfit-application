@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT_BACKCHANNEL: "true"
+      KC_HEALTH_ENABLED: "true"
+      KC_LOG_LEVEL: info
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - keycloak-network
+    restart: unless-stopped
+
+networks:
+  keycloak-network:
+    driver: bridge

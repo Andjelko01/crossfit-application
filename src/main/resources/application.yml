@@ -1,0 +1,33 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  datasource:
+    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/crossfit_application_db}
+    username: ${DATASOURCE_USERNAME:postgres}
+    password: ${DATASOURCE_PASSWORD:}
+    driverClassName: org.postgresql.Driver
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: crossfit-application-service
+            client-secret: 0eisdQcBcF9tRc0Ajmj1JuqldZsFploF
+            scope: openid
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://localhost:8080/login/oauth2/code/keycloak"
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8080/realms/crossfit-application
+    user:
+      name: admin
+      password: admin
+
+keycloak:
+  realm: crossfit-application
+  auth-server-url: http://localhost:8080/
+  enabled: true
+
+server:
+  port: 8081
