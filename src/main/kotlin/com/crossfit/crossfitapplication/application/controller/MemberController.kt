@@ -33,23 +33,44 @@ class MemberController {
         )
     }
 
-//    @DeleteMapping("/{id}")
-//    fun deleteUser(
-//        @PathVariable id: String,
-//    ): ResponseEntity<ControllerResponse<Any>> {
-//        memberService.deleteMember(id).fold(
-//            success = {
-//                return ResponseEntity.ok(ControllerResponse(HttpStatus.OK, "User deleted successfully with id ${it}"))
-//            },
-//            failure = { error ->
-//                return ResponseEntity.status(error.httpStatus!!.value()).body(
-//                    ControllerResponse(
-//                        status = error.httpStatus,
-//                        message = error.errorMessage,
-//                        error = error.retryPolicy!!.name,
-//                    ),
-//                )
-//            },
-//        )
-//    }
+    @DeleteMapping("/{id}")
+    fun deleteUser(
+        @PathVariable id: String,
+    ): ResponseEntity<ControllerResponse<Any>> {
+        memberService.deleteMember(id).fold(
+            success = {
+                return ResponseEntity.ok(ControllerResponse(HttpStatus.OK, "User deleted successfully with id ${it}"))
+            },
+            failure = { error ->
+                return ResponseEntity.status(error.httpStatus!!.value()).body(
+                    ControllerResponse(
+                        status = error.httpStatus,
+                        message = error.errorMessage,
+                        error = error.retryPolicy!!.name,
+                    ),
+                )
+            },
+        )
+    }
+
+    @PutMapping("/{id}")
+    fun resetUserPassword(
+        @PathVariable id: String,
+        @RequestBody password:String
+    ): ResponseEntity<ControllerResponse<Any>> {
+        memberService.resetUserPassword(id,password).fold(
+            success = {
+                return ResponseEntity.ok(ControllerResponse(HttpStatus.OK, "User password reset successfully with id ${it}"))
+            },
+            failure = { error ->
+                return ResponseEntity.status(error.httpStatus!!.value()).body(
+                    ControllerResponse(
+                        status = error.httpStatus,
+                        message = error.errorMessage,
+                        error = error.retryPolicy!!.name,
+                    ),
+                )
+            },
+        )
+    }
 }

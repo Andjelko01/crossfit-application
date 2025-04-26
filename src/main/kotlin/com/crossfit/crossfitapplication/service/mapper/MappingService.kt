@@ -16,7 +16,7 @@ class MappingService {
             dateOfBirth = member.dateOfBirth ?: OffsetDateTime.MIN,
             joinDate = member.joinDate ?: OffsetDateTime.MIN,
 //            memberships = member.memberships.map { it.toDto() },
-//            workouts = emptyList() // Dodajte logiku za Workouts ako je potrebno
+//            workouts = emptyList()
         )
     }
 

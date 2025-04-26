@@ -9,6 +9,9 @@ spring:
     driverClassName: org.postgresql.Driver
   security:
     oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: "http://localhost:8080/realms/crossfit-application"
       client:
         registration:
           keycloak:
@@ -19,7 +22,7 @@ spring:
             redirect-uri: "http://localhost:8080/login/oauth2/code/keycloak"
         provider:
           keycloak:
-            issuer-uri: http://localhost:8080/realms/crossfit-application
+            issuer-uri: "http://localhost:8080/realms/crossfit-application"
     user:
       name: admin
       password: admin

@@ -2,6 +2,8 @@ package com.crossfit.crossfitapplication.datasource.keycloak
 
 import com.crossfit.crossfitapplication.datasource.error.DataSourceError
 import com.crossfit.crossfitapplication.datasource.error.enums.DataSourceErrorRetryPolicy
+import com.crossfit.crossfitapplication.datasource.keycloak.configuration.KeycloakProperties
+import com.crossfit.crossfitapplication.datasource.keycloak.response.KeycloakTokenResponse
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.michaelbull.result.*
@@ -9,33 +11,45 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.ws.rs.NotFoundException
 import jakarta.ws.rs.WebApplicationException
 import jakarta.ws.rs.core.Response
+import kotlinx.coroutines.reactor.awaitSingle
 import org.keycloak.admin.client.resource.RealmResource
 import org.keycloak.representations.idm.CredentialRepresentation
 import org.keycloak.representations.idm.UserRepresentation
-import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
+import org.springframework.util.LinkedMultiValueMap
+import org.springframework.util.MultiValueMap
+import org.springframework.web.reactive.function.BodyInserters
+import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientResponseException
+import reactor.core.publisher.Mono
+import reactor.util.retry.Retry
 import java.net.URI
+import java.time.Duration
+import java.util.*
+
 
 @Service
-class KeycloakDataSource {
-
-    @Autowired
-    private lateinit var realmResource: RealmResource
+class KeycloakDataSource(
+    private val realmResource: RealmResource, private val webClientBuilder: WebClient.Builder, private val keycloakProperties: KeycloakProperties
+) {
 
     companion object {
         private val logger = KotlinLogging.logger {}
         private val objectMapper = ObjectMapper()
-
     }
 
+    private val webClient by lazy { webClientBuilder.build() }
+
+
     /**
-     * Registruje novog korisnika u Keycloak-u koristeći funkcionalni pristup za greške.
+     * Registers a new user in Keycloak using a functional error handling approach.
      */
     fun registerUserOnKeycloak(username: String, email: String, firstName: String, lastName: String, password: String): Result<String, DataSourceError> {
-        logger.debug { "Pokušaj registracije korisnika '$username' na Keycloak (funkcionalni pristup)." }
+        logger.debug { "Attempting to register user '$username' in Keycloak (functional approach)." }
         val userRepresentation = UserRepresentation().apply {
-            // ... (isto kao ranije) ...
             this.username = username
             this.email = email
             this.firstName = firstName
@@ -50,79 +64,68 @@ class KeycloakDataSource {
             )
         }
 
-        // Korak 1: Pokušaj kreiranja korisnika, uhvati inicijalne greške
+        // Step 1: Try creating the user, catch any initial errors
         return runCatching {
-            realmResource.users().create(userRepresentation) // Vraća Response
+            realmResource.users().create(userRepresentation) // Returns Response
         }.mapError {
-            // Mapiraj greške koje su se desile TOKOM create() poziva
             mapThrowableToDataSourceError(it)
-        }.andThen { response -> // Ako je create() uspeo (bez izuzetka), obradi Response
+        }.andThen { response ->
             val status = response.status
             if (status == Response.Status.CREATED.statusCode) { // 201
                 val locationHeader: URI? = response.location
                 val createdUserId = locationHeader?.path?.substringAfterLast('/')
-                response.close() // Zatvori response NAKON čitanja headera
+                response.close() // Always close after reading
 
                 if (createdUserId != null) {
-                    logger.info { "Korisnik '$username' uspešno kreiran. ID: $createdUserId" }
+                    logger.info { "User '$username' successfully created. ID: $createdUserId" }
                     Ok(createdUserId)
                 } else {
-                    // Fallback pretraga (manje idealno)
-                    logger.warn { "Nije moguće izvući User ID iz Location header-a za '$username'. Pokušaj pretrage..." }
+                    // Fallback search (less ideal)
+                    logger.warn { "Unable to extract User ID from Location header for '$username'. Attempting search..." }
                     runCatching {
                         realmResource.users().searchByUsername(username, true)
                     }.mapError {
-                        mapThrowableToDataSourceError(it) // Mapiraj grešku pretrage
+                        mapThrowableToDataSourceError(it)
                     }.andThen { users ->
                         if (users.isNotEmpty()) {
                             val foundId = users[0].id
-                            logger.info { "Korisnik '$username' pronađen pretragom. ID: $foundId" }
+                            logger.info { "User '$username' found via search. ID: $foundId" }
                             Ok(foundId)
                         } else {
-                            logger.error { "Korisnik '$username' kreiran (status 201) ali nije pronađen pretragom!" }
-                            Err(DataSourceError(errorMessage = "Korisnik kreiran ali ID nije mogao biti dohvaćen", httpStatus = HttpStatus.INTERNAL_SERVER_ERROR))
+                            logger.error { "User '$username' created (status 201) but not found via search!" }
+                            Err(DataSourceError(errorMessage = "User created but ID could not be retrieved", httpStatus = HttpStatus.INTERNAL_SERVER_ERROR))
                         }
                     }
                 }
             } else {
-                // Status nije 201, ekstraktuj grešku iz response-a
-                val errorDetails = readErrorResponse(response) // Čita i zatvara response
-                logger.error { "Neuspešno kreiranje korisnika '$username'. Status: $status, Odgovor: ${errorDetails.errorMessage}" }
+                val errorDetails = readErrorResponse(response)
+                logger.error { "Failed to create user '$username'. Status: $status, Response: ${errorDetails.errorMessage}" }
                 Err(errorDetails)
             }
         }
     }
 
     /**
-     * Briše korisnika iz Keycloak-a koristeći funkcionalni pristup za greške.
+     * Deletes a user from Keycloak using a functional error handling approach.
      */
     fun deleteUserByKeycloakId(userId: String): Result<Unit, DataSourceError> {
-        logger.debug { "Pokušaj brisanja Keycloak korisnika ID: $userId (funkcionalni pristup)." }
-        // runCatching hvata bilo koji Throwable iz bloka
+        logger.debug { "Attempting to delete Keycloak user with ID: $userId (functional approach)." }
         return runCatching {
-            // Dohvati UserResource i odmah pozovi remove()
-            // Ako get() vrati null ili remove() baci izuzetak, biće uhvaćeno
             realmResource.users().get(userId)?.remove()
-                ?: throw NotFoundException("Korisnik sa ID $userId nije pronađen za brisanje.") // Eksplicitno baci ako get vrati null
-            // Ako nije bilo izuzetka, implicitno vraća Unit
+                ?: throw NotFoundException("User with ID $userId not found for deletion.")
         }.mapError { throwable ->
-            // Mapiraj uhvaćeni Throwable u naš DataSourceError
             mapThrowableToDataSourceError(throwable)
         }.andThen {
-            // Ako je runCatching uspeo (vratio Unit), loguj i vrati Ok(Unit)
-            logger.info { "Uspešno obrisan Keycloak korisnik sa ID: $userId." }
+            logger.info { "Successfully deleted Keycloak user with ID: $userId." }
             Ok(Unit)
         }
-        // Nema potrebe za eksplicitnim Ok(Unit) van andThen jer mapError vraća Result<Nothing, DataSourceError>
-        // a andThen transformiše Result<Unit, DataSourceError> -> Result<Unit, DataSourceError>
-        // Ako runCatching vrati uspeh (Unit), a mapError se ne aktivira, rezultat je Ok(Unit)
     }
 
     /**
-     * Resetuje lozinku za datog Keycloak korisnika koristeći funkcionalni pristup za greške.
+     * Resets the password for a given Keycloak user using a functional error handling approach.
      */
     fun resetUserPassword(userId: String, newPassword: String, temporary: Boolean = false): Result<Unit, DataSourceError> {
-        logger.debug { "Pokušaj resetovanja lozinke za Keycloak korisnika ID: $userId (funkcionalni pristup)." }
+        logger.debug { "Attempting to reset password for Keycloak user ID: $userId (functional approach)." }
         val credential = CredentialRepresentation().apply {
             type = CredentialRepresentation.PASSWORD
             value = newPassword
@@ -130,70 +133,66 @@ class KeycloakDataSource {
         }
 
         return runCatching {
-            realmResource.users().get(userId)?.resetPassword(credential)
-                ?: throw NotFoundException("Korisnik sa ID $userId nije pronađen za reset lozinke.")
-            // Vraća Unit ako uspe
+            val userResource = realmResource.users().get(userId)
+                ?: throw NotFoundException("User with ID $userId not found for password reset.")
+            userResource.resetPassword(credential)
         }.mapError { throwable ->
             mapThrowableToDataSourceError(throwable)
         }.andThen {
-            logger.info { "Uspešno resetovana lozinka za Keycloak korisnika ID: $userId" }
-            Ok(Unit) // Vrati Ok eksplicitno ako je potrebno radi jasnoće ili daljeg lanca
+            logger.info { "Successfully reset password for Keycloak user ID: $userId." }
+            Ok(Unit)
         }
     }
 
-    // Helper funkcija za čitanje greške iz Keycloak odgovora (prilagodi po potrebi)
-// Važno: Ova funkcija sada treba da prima Response i da ga OBAVEZNO zatvori.
+    /**
+     * Helper function for reading error details from a Keycloak response.
+     * IMPORTANT: Always closes the Response after reading.
+     */
     fun readErrorResponse(response: Response): DataSourceError {
         val status = response.status
-        var message = "Status $status, nepoznata greška." // Default message
+        var message = "Status $status, unknown error."
 
         try {
             if (response.hasEntity()) {
                 val jsonString = response.readEntity(String::class.java)
                 if (!jsonString.isNullOrBlank()) {
                     message = try {
-                        // Attempt to parse as JSON and extract 'errorMessage'
                         val jsonNode = objectMapper.readTree(jsonString)
-                        // Use .path() which returns a missing node instead of null, then check textValue()
                         val errorMsgNode = jsonNode.path("errorMessage")
                         if (!errorMsgNode.isMissingNode && errorMsgNode.isTextual) {
-                            errorMsgNode.asText() // Extracted value!
+                            errorMsgNode.asText()
                         } else {
-                            // JSON valid, but 'errorMessage' key missing or not text
                             logger.warn { "Keycloak error response JSON does not contain a textual 'errorMessage' field. Body: $jsonString" }
-                            jsonString // Fallback to the full JSON string
+                            jsonString
                         }
                     } catch (e: JsonProcessingException) {
-                        // Body was not valid JSON, use the raw string as the message
                         logger.warn(e) { "Failed to parse Keycloak error response as JSON. Body: $jsonString" }
-                        jsonString // Fallback to the full string if parsing fails
+                        jsonString
                     }
                 } else {
-                    message = "Status $status, prazno telo odgovora."
+                    message = "Status $status, empty response body."
                 }
             } else {
-                message = "Status $status, nema tela odgovora."
+                message = "Status $status, no response body."
             }
         } catch (e: Exception) {
-            // Catch errors during readEntity itself
-            logger.error(e) {"Greška prilikom čitanja tela odgovora: ${e.message}"}
-            message = "Status $status, nije moguće pročitati telo greške: ${e.message}"
+            logger.error(e) { "Error while reading response body: ${e.message}" }
+            message = "Status $status, unable to read error body: ${e.message}"
         } finally {
-            // Ensure response is always closed
             response.close()
         }
-        // Create DataSourceError with potentially extracted message
         return DataSourceError(errorMessage = message, httpStatus = HttpStatus.valueOf(status))
     }
 
-
-    // === Helper funkcija za mapiranje Throwable u DataSourceError ===
+    /**
+     * Helper function to map any Throwable to a DataSourceError.
+     */
     private fun mapThrowableToDataSourceError(throwable: Throwable): DataSourceError {
-        logger.error(throwable) { "Greška uhvaćena u Keycloak pozivu: ${throwable.message}" }
+        logger.error(throwable) { "Exception caught during Keycloak call: ${throwable.message}" }
         return when (throwable) {
             is NotFoundException -> {
                 DataSourceError(
-                    errorMessage = "Traženi resurs nije pronađen",
+                    errorMessage = "Requested resource not found",
                     httpStatus = HttpStatus.NOT_FOUND,
                     retryPolicy = DataSourceErrorRetryPolicy.NOT_RETRYABLE,
                 )
@@ -203,18 +202,69 @@ class KeycloakDataSource {
                 val response = throwable.response
                 val status = response?.status ?: 500
                 val message = try {
-                    response?.readEntity(String::class.java) ?: throwable.message ?: "Nepoznata WebApplicationException"
+                    response?.readEntity(String::class.java) ?: throwable.message ?: "Unknown WebApplicationException"
                 } catch (readError: Exception) {
-                    throwable.message ?: "Nepoznata WebApplicationException (čitanje tela neuspešno)"
+                    throwable.message ?: "Unknown WebApplicationException (failed to read body)"
                 } finally {
-                    response?.close() // Zatvori response ako postoji
+                    response?.close()
                 }
-                DataSourceError(errorMessage = "Greška u Keycloak API pozivu: $message", retryPolicy = DataSourceErrorRetryPolicy.RETRYABLE, httpStatus = HttpStatus.valueOf(status))
+                DataSourceError(
+                    errorMessage = "Keycloak API call error: $message",
+                    httpStatus = HttpStatus.valueOf(status),
+                    retryPolicy = DataSourceErrorRetryPolicy.RETRYABLE
+                )
             }
 
             else -> {
-                DataSourceError(errorMessage = "Neočekivana greška: ${throwable.message}", httpStatus = HttpStatus.INTERNAL_SERVER_ERROR, retryPolicy = DataSourceErrorRetryPolicy.RETRYABLE)
+                DataSourceError(
+                    errorMessage = "Unexpected error: ${throwable.message}",
+                    httpStatus = HttpStatus.INTERNAL_SERVER_ERROR,
+                    retryPolicy = DataSourceErrorRetryPolicy.RETRYABLE
+                )
             }
         }
     }
+
+
+
+    suspend fun authenticate(username: String, password: String): Result<KeycloakTokenResponse, DataSourceError> {
+        return runCatching {
+            val tokenUri = "${keycloakProperties.provider.keycloak.issuerUri}/protocol/openid-connect/token"
+
+            val formData: MultiValueMap<String, String> = LinkedMultiValueMap<String, String>().apply {
+                add("grant_type", "password")
+                add("client_id", keycloakProperties.registration.keycloak.clientId)
+                add("client_secret", keycloakProperties.registration.keycloak.clientSecret)
+                add("username", username)
+                add("password", password)
+            }
+
+            webClient.post()
+                .uri(tokenUri)
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                .body(BodyInserters.fromFormData(formData))
+                .retrieve()
+                .onStatus({ it.isError }) { response ->
+                    response.bodyToMono(String::class.java).flatMap { body ->
+                        Mono.error(
+                            WebClientResponseException.create(
+                                response.statusCode(),
+                                "Error from Keycloak: ${response.statusCode()} - $body",
+                                response.headers().asHttpHeaders(),
+                                body.toByteArray(),
+                                null,
+                                null
+                            )
+                        )
+                    }
+                }
+                .bodyToMono(KeycloakTokenResponse::class.java) // DTO klasa
+                .timeout(Duration.ofSeconds(5))
+                .retryWhen(Retry.fixedDelay(2, Duration.ofSeconds(1)))
+                .awaitSingle()
+        }.mapError {
+            mapThrowableToDataSourceError(it)
+        }
+    }
+
 }
