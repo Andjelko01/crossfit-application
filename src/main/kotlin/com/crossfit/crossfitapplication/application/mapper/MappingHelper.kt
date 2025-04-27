@@ -11,3 +11,4 @@ fun MembershipCreateRequest.toMembershipDto(): MembershipDto {
         price = this.price,
     )
 }
+

@@ -1,7 +1,10 @@
 package com.crossfit.crossfitapplication.application.response
 
 import com.crossfit.crossfitapplication.application.exceptions.MembershipDateValidationException
+import com.crossfit.crossfitapplication.application.exceptions.PhysicalParameterValidationException
+import com.crossfit.crossfitapplication.datasource.database.models.entites.member.measurements.PhysicalParameter
 import com.crossfit.crossfitapplication.service.error.ServiceError
+import com.crossfit.crossfitapplication.service.models.PhysicalParameterDto
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -30,3 +33,15 @@ fun handleMembershipDateValidationException(ex: MembershipDateValidationExceptio
         )
     )
 }
+
+@ExceptionHandler(PhysicalParameterValidationException::class)
+fun handlePhysicalParameterValidationException(ex: PhysicalParameterValidationException): ResponseEntity<ControllerResponse<PhysicalParameterDto>> {
+    return ResponseEntity.badRequest().body(
+        ControllerResponse(
+            status = HttpStatus.BAD_REQUEST,
+            message = ex.message,
+            error = "Validation Error"
+        )
+    )
+}
+

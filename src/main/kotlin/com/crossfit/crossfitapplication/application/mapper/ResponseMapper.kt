@@ -1,7 +1,7 @@
-package com.crossfit.crossfitapplication.application.response
+package com.crossfit.crossfitapplication.application.mapper
 
+import com.crossfit.crossfitapplication.application.response.MembershipResponse
 import com.crossfit.crossfitapplication.service.models.MembershipDto
-import org.bouncycastle.asn1.ocsp.ResponseData
 import org.springframework.stereotype.Component
 
 @Component
