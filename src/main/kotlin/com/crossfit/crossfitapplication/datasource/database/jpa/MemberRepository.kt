@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository
 interface MemberRepository : JpaRepository<Member, Long>
 {
     fun deleteMemberByKeycloakId(keycloakId: String)
+    fun getMemberByKeycloakId(keycloakId: String): Member
 }

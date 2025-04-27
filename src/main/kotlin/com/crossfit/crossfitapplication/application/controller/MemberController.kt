@@ -1,7 +1,9 @@
 package com.crossfit.crossfitapplication.application.controller
 
-import com.crossfit.crossfitapplication.application.controller.request.member.MemberCreateRequest
-import com.crossfit.crossfitapplication.application.controller.response.ControllerResponse
+import com.crossfit.crossfitapplication.application.request.member.MemberCreateRequest
+import com.crossfit.crossfitapplication.application.response.ControllerResponse
+import com.crossfit.crossfitapplication.application.response.errorResponse
+import com.crossfit.crossfitapplication.application.response.successResponse
 import com.crossfit.crossfitapplication.service.MemberService
 import com.github.michaelbull.result.fold
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,19 +18,13 @@ class MemberController {
     private lateinit var memberService: MemberService
 
     @PostMapping("/create")
-    fun createUser(@RequestBody request: MemberCreateRequest): ResponseEntity<ControllerResponse<Any>> {
-        memberService.createMember(request).fold(
-            success = {
-                return ResponseEntity.ok(ControllerResponse(HttpStatus.OK, "User created successfully with id $it"))
+    fun createUser(@RequestBody request: MemberCreateRequest): ResponseEntity<ControllerResponse<String>> {
+        return memberService.createMember(request).fold(
+            success = { memberId ->
+                successResponse(data = memberId, message = "User created successfully with id $memberId", status = HttpStatus.CREATED)
             },
             failure = { error ->
-                return ResponseEntity.status(error.httpStatus!!.value()).body(
-                    ControllerResponse(
-                        status = error.httpStatus,
-                        message = error.errorMessage,
-                        error = error.retryPolicy.toString(),
-                    ),
-                )
+                errorResponse(error)
             },
         )
     }
@@ -36,19 +32,13 @@ class MemberController {
     @DeleteMapping("/{id}")
     fun deleteUser(
         @PathVariable id: String,
-    ): ResponseEntity<ControllerResponse<Any>> {
-        memberService.deleteMember(id).fold(
-            success = {
-                return ResponseEntity.ok(ControllerResponse(HttpStatus.OK, "User deleted successfully with id ${it}"))
+    ): ResponseEntity<ControllerResponse<Unit>> {
+        return memberService.deleteMember(id).fold(
+            success = { deletedId ->
+                successResponse(data = deletedId, message = "User deleted successfully with id $deletedId")
             },
             failure = { error ->
-                return ResponseEntity.status(error.httpStatus!!.value()).body(
-                    ControllerResponse(
-                        status = error.httpStatus,
-                        message = error.errorMessage,
-                        error = error.retryPolicy!!.name,
-                    ),
-                )
+                errorResponse(error)
             },
         )
     }
@@ -56,20 +46,14 @@ class MemberController {
     @PutMapping("/{id}")
     fun resetUserPassword(
         @PathVariable id: String,
-        @RequestBody password:String
+        @RequestBody password: String
     ): ResponseEntity<ControllerResponse<Any>> {
-        memberService.resetUserPassword(id,password).fold(
+        return memberService.resetUserPassword(id, password).fold(
             success = {
-                return ResponseEntity.ok(ControllerResponse(HttpStatus.OK, "User password reset successfully with id ${it}"))
+                successResponse(data = Unit, message = "User password reset successfully with id ${it}")
             },
             failure = { error ->
-                return ResponseEntity.status(error.httpStatus!!.value()).body(
-                    ControllerResponse(
-                        status = error.httpStatus,
-                        message = error.errorMessage,
-                        error = error.retryPolicy!!.name,
-                    ),
-                )
+                errorResponse(error)
             },
         )
     }

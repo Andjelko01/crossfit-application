@@ -1,6 +1,6 @@
 package com.crossfit.crossfitapplication.service
 
-import com.crossfit.crossfitapplication.application.controller.request.member.MemberCreateRequest
+import com.crossfit.crossfitapplication.application.request.member.MemberCreateRequest
 import com.crossfit.crossfitapplication.datasource.keycloak.KeycloakDataSource
 import com.crossfit.crossfitapplication.service.error.ServiceError
 import com.crossfit.crossfitapplication.service.mapper.toServiceError

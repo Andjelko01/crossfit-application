@@ -1,4 +1,4 @@
-package com.crossfit.crossfitapplication.application.controller.request.member
+package com.crossfit.crossfitapplication.application.request.member
 
 import java.time.OffsetDateTime
 

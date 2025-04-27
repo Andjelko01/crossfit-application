@@ -1,4 +1,4 @@
-package com.crossfit.crossfitapplication.application.controller.response
+package com.crossfit.crossfitapplication.application.response
 
 import java.time.OffsetDateTime
 import java.util.UUID

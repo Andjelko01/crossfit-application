@@ -1,6 +1,6 @@
 package com.crossfit.crossfitapplication.application.config
 
-import com.crossfit.crossfitapplication.application.controller.response.ControllerResponse
+import com.crossfit.crossfitapplication.application.response.ControllerResponse
 import org.springframework.dao.DataAccessException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity

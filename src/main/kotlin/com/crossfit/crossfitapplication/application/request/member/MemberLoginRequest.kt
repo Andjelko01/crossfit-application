@@ -1,4 +1,4 @@
-package com.crossfit.crossfitapplication.application.controller.request.member
+package com.crossfit.crossfitapplication.application.request.member
 
 data class MemberLoginRequest(
     val username: String,
