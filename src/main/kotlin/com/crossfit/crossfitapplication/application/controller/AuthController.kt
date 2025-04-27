@@ -1,16 +1,18 @@
 package com.crossfit.crossfitapplication.application.controller
 
-import com.crossfit.crossfitapplication.application.controller.request.MemberLoginRequest
+import com.crossfit.crossfitapplication.application.controller.request.member.MemberLoginRequest
 import com.crossfit.crossfitapplication.application.controller.response.ControllerResponse
 import com.crossfit.crossfitapplication.service.KeycloakService
+import com.crossfit.crossfitapplication.service.common.SecurityHelper
 import com.github.michaelbull.result.fold
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/auth")
-class AuthController(private val keycloakService: KeycloakService) {
+class AuthController(private val keycloakService: KeycloakService, private val securityHelper: SecurityHelper) {
 
     @PostMapping("/token")
     suspend fun getAuthToken(
@@ -33,7 +35,11 @@ class AuthController(private val keycloakService: KeycloakService) {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('admin')")
     fun protectedEndpoint(): String {
+        val userKeycloakId = securityHelper.getCurrentUserKeycloakId()
         return "Access granted to protected endpoint!"
     }
+
+
 }

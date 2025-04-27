@@ -16,6 +16,7 @@ class Member(
     val phoneNumber: String? = null,
     val joinDate: OffsetDateTime? = null,
     val email: String? = null,
+    val username: String? = null,
     @Column(unique = true, nullable = false)
     val keycloakId: String? = null,
     @OneToMany(mappedBy = "member", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)

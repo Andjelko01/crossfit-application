@@ -1,6 +1,6 @@
 package com.crossfit.crossfitapplication.application.controller
 
-import com.crossfit.crossfitapplication.application.controller.request.MemberCreateRequest
+import com.crossfit.crossfitapplication.application.controller.request.member.MemberCreateRequest
 import com.crossfit.crossfitapplication.application.controller.response.ControllerResponse
 import com.crossfit.crossfitapplication.service.MemberService
 import com.github.michaelbull.result.fold
