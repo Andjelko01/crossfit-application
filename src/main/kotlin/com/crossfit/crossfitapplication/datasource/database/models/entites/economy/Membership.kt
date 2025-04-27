@@ -6,7 +6,7 @@ import java.math.BigDecimal
 import java.time.OffsetDateTime
 
 @Entity
-class Membership (
+class Membership(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

@@ -5,7 +5,6 @@ import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.oauth2.jwt.Jwt
 
-
 class KeycloakRealmRoleConverter : Converter<Jwt, Collection<GrantedAuthority>> {
 
     override fun convert(jwt: Jwt): Collection<GrantedAuthority> {
@@ -21,4 +20,3 @@ class KeycloakRealmRoleConverter : Converter<Jwt, Collection<GrantedAuthority>> 
         return authorities
     }
 }
-

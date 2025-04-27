@@ -17,9 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 class AuthController(private val keycloakService: KeycloakService, private val securityHelper: SecurityHelper) {
 
     @PostMapping("/token")
-    suspend fun getAuthToken(
-        @RequestBody memberLoginRequest: MemberLoginRequest
-    ): ResponseEntity<ControllerResponse<Any>> {
+    suspend fun getAuthToken(@RequestBody memberLoginRequest: MemberLoginRequest): ResponseEntity<ControllerResponse<Any>> {
         keycloakService.getToken(memberLoginRequest.username, memberLoginRequest.password).fold(
             success = {
                 return ResponseEntity.ok(ControllerResponse(HttpStatus.OK, "Access token", data = it))

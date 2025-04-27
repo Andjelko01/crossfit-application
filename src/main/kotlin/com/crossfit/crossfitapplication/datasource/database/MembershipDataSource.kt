@@ -18,5 +18,4 @@ class MembershipDataSource(private val membershipRepository: MembershipRepositor
             error.toDataSourceError()
         }
     }
-
 }

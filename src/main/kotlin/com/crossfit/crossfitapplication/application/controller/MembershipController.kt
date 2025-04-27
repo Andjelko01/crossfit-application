@@ -1,9 +1,9 @@
 package com.crossfit.crossfitapplication.application.controller
 
 import com.crossfit.crossfitapplication.application.exceptions.MembershipDateValidationException
-import com.crossfit.crossfitapplication.application.request.membership.MembershipCreateRequest
 import com.crossfit.crossfitapplication.application.mapper.ResponseMapper
 import com.crossfit.crossfitapplication.application.mapper.toMembershipDto
+import com.crossfit.crossfitapplication.application.request.membership.MembershipCreateRequest
 import com.crossfit.crossfitapplication.application.response.*
 import com.crossfit.crossfitapplication.service.MembershipService
 import com.crossfit.crossfitapplication.service.common.SecurityHelper
@@ -34,7 +34,7 @@ class MembershipController(private val securityHelper: SecurityHelper, private v
             },
             failure = { error ->
                 errorResponse(error)
-            }
+            },
         )
     }
 

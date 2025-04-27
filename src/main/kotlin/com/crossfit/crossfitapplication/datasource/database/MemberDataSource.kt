@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service
 @Service
 class MemberDataSource(private val memberRepository: MemberRepository) {
 
-    fun createMember(member: Member):Result<Member, DataSourceError> {
+    fun createMember(member: Member): Result<Member, DataSourceError> {
         return com.github.michaelbull.result.runCatching {
             memberRepository.save(member)
         }.mapError { error ->
@@ -19,7 +19,7 @@ class MemberDataSource(private val memberRepository: MemberRepository) {
         }
     }
 
-    fun deleteMember(keycloakId: String):Result<Unit, DataSourceError> {
+    fun deleteMember(keycloakId: String): Result<Unit, DataSourceError> {
         return com.github.michaelbull.result.runCatching {
             memberRepository.deleteMemberByKeycloakId(keycloakId)
         }.mapError { error ->
@@ -34,5 +34,4 @@ class MemberDataSource(private val memberRepository: MemberRepository) {
             error.toDataSourceError()
         }
     }
-
 }

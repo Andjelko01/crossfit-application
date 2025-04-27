@@ -8,5 +8,5 @@ data class PhysicalParameterCreateRequest(
     val height: Float?,
     val skinfolds: SkinfoldsCreateRequest?,
     val measurements: MeasurementsCreateRequest?,
-    val memberKeycloakId: String?
+    val memberKeycloakId: String?,
 )

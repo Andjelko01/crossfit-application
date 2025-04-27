@@ -8,4 +8,3 @@ data class ControllerResponse<T>(
     val data: T? = null,
     val error: String? = null,
 )
-

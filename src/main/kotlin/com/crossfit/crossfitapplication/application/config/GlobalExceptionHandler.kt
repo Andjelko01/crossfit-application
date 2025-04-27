@@ -20,8 +20,8 @@ class GlobalExceptionHandler {
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     message = ex.message ?: "Database error occurred",
                     data = null,
-                    error = SQLException::class.java.name
-                )
+                    error = SQLException::class.java.name,
+                ),
             )
     }
 
@@ -34,8 +34,8 @@ class GlobalExceptionHandler {
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     message = ex.message ?: "Data access error",
                     data = null,
-                    error = DataAccessException::class.java.name
-                )
+                    error = DataAccessException::class.java.name,
+                ),
             )
     }
 
@@ -48,8 +48,8 @@ class GlobalExceptionHandler {
                     status = HttpStatus.INTERNAL_SERVER_ERROR,
                     message = ex.message ?: "Internal server error",
                     data = null,
-                    error = Exception::class.java.name
-                )
+                    error = Exception::class.java.name,
+                ),
             )
     }
 }

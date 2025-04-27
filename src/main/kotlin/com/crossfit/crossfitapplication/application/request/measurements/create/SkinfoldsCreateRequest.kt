@@ -8,5 +8,5 @@ data class SkinfoldsCreateRequest(
     val stomach: Float?,
     val glutes: Float?,
     val frontThigh: Float?,
-    val rearThigh: Float?
+    val rearThigh: Float?,
 )

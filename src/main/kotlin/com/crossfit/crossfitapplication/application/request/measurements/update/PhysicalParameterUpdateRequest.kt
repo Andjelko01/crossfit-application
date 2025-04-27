@@ -7,5 +7,5 @@ data class PhysicalParameterUpdateRequest(
     val weight: Float?,
     val height: Float?,
     val skinfolds: SkinfoldsUpdateRequest?,
-    val measurements: MeasurementsUpdateRequest?
+    val measurements: MeasurementsUpdateRequest?,
 )

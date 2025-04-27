@@ -30,10 +30,9 @@ import java.net.URI
 import java.time.Duration
 import java.util.*
 
-
 @Service
 class KeycloakDataSource(
-    private val realmResource: RealmResource, private val webClientBuilder: WebClient.Builder, private val keycloakProperties: KeycloakProperties
+    private val realmResource: RealmResource, private val webClientBuilder: WebClient.Builder, private val keycloakProperties: KeycloakProperties,
 ) {
 
     companion object {
@@ -42,7 +41,6 @@ class KeycloakDataSource(
     }
 
     private val webClient by lazy { webClientBuilder.build() }
-
 
     /**
      * Registers a new user in Keycloak using a functional error handling approach.
@@ -211,7 +209,7 @@ class KeycloakDataSource(
                 DataSourceError(
                     errorMessage = "Keycloak API call error: $message",
                     httpStatus = HttpStatus.valueOf(status),
-                    retryPolicy = DataSourceErrorRetryPolicy.RETRYABLE
+                    retryPolicy = DataSourceErrorRetryPolicy.RETRYABLE,
                 )
             }
 
@@ -219,13 +217,11 @@ class KeycloakDataSource(
                 DataSourceError(
                     errorMessage = "Unexpected error: ${throwable.message}",
                     httpStatus = HttpStatus.INTERNAL_SERVER_ERROR,
-                    retryPolicy = DataSourceErrorRetryPolicy.RETRYABLE
+                    retryPolicy = DataSourceErrorRetryPolicy.RETRYABLE,
                 )
             }
         }
     }
-
-
 
     suspend fun authenticate(username: String, password: String): Result<KeycloakTokenResponse, DataSourceError> {
         return runCatching {
@@ -253,8 +249,8 @@ class KeycloakDataSource(
                                 response.headers().asHttpHeaders(),
                                 body.toByteArray(),
                                 null,
-                                null
-                            )
+                                null,
+                            ),
                         )
                     }
                 }
@@ -266,5 +262,4 @@ class KeycloakDataSource(
             mapThrowableToDataSourceError(it)
         }
     }
-
 }

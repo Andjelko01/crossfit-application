@@ -9,5 +9,5 @@ data class PhysicalParameterDto(
     val height: Float? = null,
     val skinfolds: SkinfoldsDto? = null,
     val measurements: MeasurementsDto? = null,
-    val memberKeycloakId: String
+    val memberKeycloakId: String,
 )

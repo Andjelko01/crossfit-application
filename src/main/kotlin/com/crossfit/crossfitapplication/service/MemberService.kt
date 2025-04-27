@@ -33,7 +33,7 @@ class MemberService(private val keycloakService: KeycloakService, private val me
                     dateOfBirth = memberRequest.dateOfBirth,
                     joinDate = memberRequest.joinDate,
                     username = memberRequest.username,
-                    keycloakId = keycloakUserId
+                    keycloakId = keycloakUserId,
                 )
                 memberDataSource.createMember(databaseMember).fold(
                     success = {
@@ -45,22 +45,27 @@ class MemberService(private val keycloakService: KeycloakService, private val me
                                 logger.error { "COMPENSATION: Successfully deleted Keycloak user $keycloakUserId due to DB failure." }
                                 Err(
                                     ServiceError(
-                                        ServiceErrorRetryPolicy.NOT_RETRYABLE, dbException.errorMessage ?: "Unknown database error during createMember", httpStatus = HttpStatus.INTERNAL_SERVER_ERROR
-                                    )
+                                        ServiceErrorRetryPolicy.NOT_RETRYABLE,
+                                        dbException.errorMessage ?: "Unknown database error during createMember",
+                                        httpStatus = HttpStatus.INTERNAL_SERVER_ERROR,
+                                    ),
                                 )
                             },
                             failure = { compensationError ->
-                                logger.error { "CRITICAL FAILURE: Could not compensate (delete) Keycloak user $keycloakUserId after DB failure. Keycloak Error: $compensationError. Original DB error: ${dbException.errorMessage}" }
+                                logger.error {
+                                    "CRITICAL FAILURE: Could not compensate (delete) Keycloak user $keycloakUserId after DB failure. Keycloak Error: $compensationError. " +
+                                        "Original DB error: ${dbException.errorMessage}"
+                                }
                                 compensationError.errorMessage = "Failed to delete Keycloak user $keycloakUserId after DB error. Initial DB error: ${dbException.errorMessage}"
                                 Err(compensationError)
-                            }
+                            },
                         )
-                    }
+                    },
                 )
             },
             failure = { keycloakError ->
                 Err(keycloakError)
-            }
+            },
         )
     }
 

@@ -30,9 +30,7 @@ class MemberController {
     }
 
     @DeleteMapping("/{id}")
-    fun deleteUser(
-        @PathVariable id: String,
-    ): ResponseEntity<ControllerResponse<Unit>> {
+    fun deleteUser(@PathVariable id: String): ResponseEntity<ControllerResponse<Unit>> {
         return memberService.deleteMember(id).fold(
             success = { deletedId ->
                 successResponse(data = deletedId, message = "User deleted successfully with id $deletedId")
@@ -44,13 +42,10 @@ class MemberController {
     }
 
     @PutMapping("/{id}")
-    fun resetUserPassword(
-        @PathVariable id: String,
-        @RequestBody password: String
-    ): ResponseEntity<ControllerResponse<Any>> {
+    fun resetUserPassword(@PathVariable id: String, @RequestBody password: String): ResponseEntity<ControllerResponse<Any>> {
         return memberService.resetUserPassword(id, password).fold(
             success = {
-                successResponse(data = Unit, message = "User password reset successfully with id ${it}")
+                successResponse(data = Unit, message = "User password reset successfully with id $it")
             },
             failure = { error ->
                 errorResponse(error)

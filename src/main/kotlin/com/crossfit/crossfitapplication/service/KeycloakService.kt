@@ -67,5 +67,4 @@ class KeycloakService {
             Ok(keycloakUserId)
         }
     }
-
 }

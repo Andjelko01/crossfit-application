@@ -18,5 +18,5 @@ class PhysicalParameter(
     val measurements: Measurements? = null,
     @ManyToOne
     @JoinColumn(name = "member_id")
-    var member: Member
+    var member: Member,
 )

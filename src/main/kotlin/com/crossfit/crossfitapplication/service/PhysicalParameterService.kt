@@ -13,7 +13,11 @@ import com.github.michaelbull.result.mapError
 import org.springframework.stereotype.Service
 
 @Service
-class PhysicalParameterService(private val physicalParameterDataSource: PhysicalParameterDataSource, private val physicalParameterServiceMapper: PhysicalParameterServiceMapper, private val memberDataSource: MemberDataSource) {
+class PhysicalParameterService(
+    private val physicalParameterDataSource: PhysicalParameterDataSource,
+    private val physicalParameterServiceMapper: PhysicalParameterServiceMapper,
+    private val memberDataSource: MemberDataSource,
+) {
 
     fun createPhysicalParameter(physicalParameterDto: PhysicalParameterDto): Result<PhysicalParameterDto, ServiceError> {
         return memberDataSource.getMemberByKeycloakId(physicalParameterDto.memberKeycloakId)

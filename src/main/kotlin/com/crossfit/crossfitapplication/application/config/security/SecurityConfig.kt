@@ -36,7 +36,6 @@ class SecurityConfig {
         return http.build()
     }
 
-
     @Bean
     fun keycloakAuthenticationConverter(): JwtAuthenticationConverter {
         val converter = JwtAuthenticationConverter()

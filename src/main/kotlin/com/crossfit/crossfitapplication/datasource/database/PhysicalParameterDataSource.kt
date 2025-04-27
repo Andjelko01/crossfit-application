@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service
 class PhysicalParameterDataSource(
     private val physicalParameterRepository: PhysicalParameterRepository,
     private val measurementsRepository: MeasurementsRepository,
-    private val skinfoldsRepository: SkinfoldsRepository
+    private val skinfoldsRepository: SkinfoldsRepository,
 ) {
 
     fun createPhysicalParameter(physicalParameter: PhysicalParameter): Result<PhysicalParameter, DataSourceError> {
@@ -24,5 +24,4 @@ class PhysicalParameterDataSource(
             error.toDataSourceError()
         }
     }
-
 }

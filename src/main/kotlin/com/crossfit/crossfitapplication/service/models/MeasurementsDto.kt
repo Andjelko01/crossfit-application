@@ -6,5 +6,5 @@ data class MeasurementsDto(
     val chest: Float? = null,
     val stomach: Float? = null,
     val hips: Float? = null,
-    val thigh: Float? = null
+    val thigh: Float? = null,
 )

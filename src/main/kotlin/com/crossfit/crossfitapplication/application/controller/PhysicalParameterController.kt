@@ -7,14 +7,13 @@ import com.crossfit.crossfitapplication.application.response.ControllerResponse
 import com.crossfit.crossfitapplication.application.response.errorResponse
 import com.crossfit.crossfitapplication.application.response.successResponse
 import com.crossfit.crossfitapplication.service.PhysicalParameterService
-import com.crossfit.crossfitapplication.service.common.SecurityHelper
 import com.crossfit.crossfitapplication.service.models.PhysicalParameterDto
 import com.github.michaelbull.result.fold
+import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
-import jakarta.validation.Valid
 
 @RestController
 @RequestMapping("/physical-parameters")
@@ -36,7 +35,7 @@ class PhysicalParameterController(
             },
             failure = { error ->
                 errorResponse(error)
-            }
+            },
         )
     }
 
@@ -54,5 +53,4 @@ class PhysicalParameterController(
             throw PhysicalParameterValidationException("Member ID cannot be null.")
         }
     }
-
 }

@@ -9,5 +9,5 @@ data class SkinfoldsDto(
     val stomach: Float? = null,
     val glutes: Float? = null,
     val frontThigh: Float? = null,
-    val rearThigh: Float? = null
+    val rearThigh: Float? = null,
 )

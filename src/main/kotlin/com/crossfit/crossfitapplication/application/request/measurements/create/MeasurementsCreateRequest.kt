@@ -5,5 +5,5 @@ data class MeasurementsCreateRequest(
     val chest: Float?,
     val stomach: Float?,
     val hips: Float?,
-    val thigh: Float?
+    val thigh: Float?,
 )

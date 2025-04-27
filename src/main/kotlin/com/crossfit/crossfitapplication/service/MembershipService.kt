@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service
 class MembershipService(private val membershipDataSource: MembershipDataSource, private val mappingService: MappingService, private val memberDataSource: MemberDataSource) {
 
     fun createMembership(membershipDto: MembershipDto, memberKeycloakId: String): Result<MembershipDto, ServiceError> {
-
         val membership = mappingService.membershipDtoToEntity(membershipDto)
 
         return memberDataSource.getMemberByKeycloakId(memberKeycloakId)
@@ -30,5 +29,4 @@ class MembershipService(private val membershipDataSource: MembershipDataSource, 
                 Ok(mappingService.membershipEntityToDto(it))
             }
     }
-
 }
